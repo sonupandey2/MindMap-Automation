@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Execution #{{ execution.id }} — MindMap{% endblock %}
+{% block page_title %}Execution Details{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('executions.list_executions') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Executions
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Execution Info ─────────────────────────────────────── -->
+<div class="content-card mb-4">
+    <div class="card-header-custom">
+        <h5>
+            <i class="bi bi-terminal me-2"></i>
+            Execution #{{ execution.id }}
+            <span class="badge-status badge-{{ execution.status|lower }} ms-2">{{ execution.status }}</span>
+        </h5>
+        <div>
+            {% if execution.status == 'FAILED' %}
+                <form action="{{ url_for('executions.retry_execution', execution_id=execution.id) }}"
+                      method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Run Again
+                    </button>
+                </form>
+            {% endif %}
+            {% if job %}
+                <a href="{{ url_for('jobs.view_job', job_id=job.id) }}" class="btn btn-outline-primary btn-sm ms-1">
+                    <i class="bi bi-briefcase me-1"></i>View Job
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body-custom p-4">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0" style="font-size: 0.9rem;">
+                    <tr>
+                        <td class="text-muted fw-semibold" style="width: 150px;">Job Name</td>
+                        <td>{{ job.name if job else 'Deleted Job' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Execution ID</td>
+                        <td>#{{ execution.id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Start Time</td>
+                        <td>{{ execution.started_at.strftime('%Y-%m-%d %H:%M:%S') if execution.started_at else '—' }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0" style="font-size: 0.9rem;">
+                    <tr>
+                        <td class="text-muted fw-semibold" style="width: 150px;">Completed</td>
+                        <td>{{ execution.completed_at.strftime('%Y-%m-%d %H:%M:%S') if execution.completed_at else '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Duration</td>
+                        <td>{{ '%.2f'|format(execution.duration) ~ ' seconds' if execution.duration is not none else '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Return Code</td>
+                        <td>
+                            {% if execution.return_code is not none %}
+                                <code>{{ execution.return_code }}</code>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Standard Output ────────────────────────────────────── -->
+<div class="content-card mb-4">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-file-text me-2"></i>Standard Output</h5>
+    </div>
+    <div class="card-body-custom p-3">
+        {% if execution.stdout %}
+            <pre class="log-output mb-0">{{ execution.stdout }}</pre>
+        {% else %}
+            <p class="text-muted mb-0 ps-2" style="font-size: 0.9rem;">No output captured.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Error Output ───────────────────────────────────────── -->
+{% if execution.stderr %}
+<div class="content-card mb-4">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-exclamation-triangle me-2 text-danger"></i>Error Output</h5>
+    </div>
+    <div class="card-body-custom p-3">
+        <pre class="log-output log-error mb-0">{{ execution.stderr }}</pre>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Error Message ──────────────────────────────────────── -->
+{% if execution.error_message %}
+<div class="content-card mb-4">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-bug me-2 text-danger"></i>Error Message</h5>
+    </div>
+    <div class="card-body-custom p-3">
+        <div class="alert alert-danger mb-0" style="font-size: 0.9rem;">
+            {{ execution.error_message }}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

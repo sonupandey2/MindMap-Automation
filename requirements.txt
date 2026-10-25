@@ -1,0 +1,5 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Werkzeug
+APScheduler==3.10.4

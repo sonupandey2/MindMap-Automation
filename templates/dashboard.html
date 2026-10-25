@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — MindMap{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── Summary Cards ─────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="summary-card">
+            <div class="card-icon bg-primary-soft"><i class="bi bi-briefcase"></i></div>
+            <div class="card-value">{{ total_jobs }}</div>
+            <div class="card-label">Total Jobs</div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="summary-card">
+            <div class="card-icon bg-success-soft"><i class="bi bi-check-circle"></i></div>
+            <div class="card-value">{{ active_jobs }}</div>
+            <div class="card-label">Active Jobs</div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="summary-card">
+            <div class="card-icon bg-success-soft"><i class="bi bi-trophy"></i></div>
+            <div class="card-value">{{ successful_executions }}</div>
+            <div class="card-label">Successful</div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="summary-card">
+            <div class="card-icon bg-danger-soft"><i class="bi bi-x-circle"></i></div>
+            <div class="card-value">{{ failed_executions }}</div>
+            <div class="card-label">Failed</div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="summary-card">
+            <div class="card-icon bg-info-soft"><i class="bi bi-activity"></i></div>
+            <div class="card-value">{{ running_executions }}</div>
+            <div class="card-label">Running</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Analytics Charts ──────────────────────────────────── -->
+<div class="row g-4 mb-4">
+
+    <!-- Doughnut Chart — Execution Outcomes -->
+    <div class="col-lg-5">
+        <div class="content-card h-100">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-pie-chart me-2"></i>Execution Outcomes</h5>
+            </div>
+            <div class="card-body-custom p-4 d-flex justify-content-center align-items-center" style="height: 300px;">
+                <canvas id="outcomesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bar Chart — Job Status Overview -->
+    <div class="col-lg-7">
+        <div class="content-card h-100">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-bar-chart-steps me-2"></i>Job Status Overview</h5>
+            </div>
+            <div class="card-body-custom p-4" style="height: 300px;">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Recent Executions & Upcoming Jobs ─────────────────── -->
+<div class="row g-4">
+
+    <!-- Recent Executions -->
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-clock-history me-2"></i>Recent Executions</h5>
+            </div>
+            <div class="card-body-custom">
+                {% if recent_executions %}
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th>Job Name</th>
+                            <th>Start Time</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for execution, job_name in recent_executions %}
+                        <tr>
+                            <td>{{ job_name }}</td>
+                            <td>{{ execution.started_at.strftime('%Y-%m-%d %H:%M:%S') if execution.started_at else '—' }}</td>
+                            <td>
+                                {% if execution.duration is not none %}
+                                    {{ '%.1f'|format(execution.duration) }}s
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                <span class="badge-status badge-{{ execution.status|lower }}">
+                                    {{ execution.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox d-block"></i>
+                    <p>No executions yet. Run a job to see results here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Jobs -->
+    <div class="col-lg-5">
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-calendar-event me-2"></i>Upcoming Jobs</h5>
+            </div>
+            <div class="card-body-custom">
+                {% if upcoming_jobs %}
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th>Job Name</th>
+                            <th>Schedule</th>
+                            <th>Next Run</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in upcoming_jobs %}
+                        <tr>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.schedule_type|capitalize }}</td>
+                            <td>{{ job.next_run_at.strftime('%Y-%m-%d %H:%M') if job.next_run_at else '—' }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ job.status|lower }}">
+                                    {{ job.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-calendar-plus d-block"></i>
+                    <p>No upcoming jobs. Create a job to get started.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="application/json" id="dashboard-data">
+    {
+        "successCount": {{ successful_executions | tojson }},
+        "failedCount": {{ failed_executions | tojson }},
+        "runningCount": {{ running_executions | tojson }},
+        "activeCount": {{ active_jobs | tojson }}
+    }
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Shared options for premium look
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = "#6c757d";
+        Chart.defaults.plugins.tooltip.backgroundColor = "rgba(11, 17, 32, 0.9)";
+        Chart.defaults.plugins.tooltip.padding = 12;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+
+        // Read server-side data from the JSON data island (avoids linter false positives)
+        const _data = JSON.parse(document.getElementById('dashboard-data').textContent);
+
+        // 1. Execution Outcomes (Doughnut Chart)
+        const ctxOutcomes = document.getElementById('outcomesChart').getContext('2d');
+        const successCount = _data.successCount;
+        const failedCount = _data.failedCount;
+        const runningCount = _data.runningCount;
+
+        new Chart(ctxOutcomes, {
+            type: 'doughnut',
+            data: {
+                labels: ['Success', 'Failed', 'Running'],
+                datasets: [{
+                    data: [successCount, failedCount, runningCount],
+                    backgroundColor: [
+                        '#198754',
+                        '#dc3545',
+                        '#0dcaf0'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+
+        // 2. Job Status (Bar Chart)
+        const ctxStatus = document.getElementById('statusChart').getContext('2d');
+        const activeCount = _data.activeCount;
+
+        new Chart(ctxStatus, {
+            type: 'bar',
+            data: {
+                labels: ['Active Jobs'],
+                datasets: [{
+                    label: 'Number of Jobs',
+                    data: [activeCount],
+                    backgroundColor: [
+                        'rgba(13, 110, 253, 0.85)'
+                    ],
+                    borderRadius: 6,
+                    barPercentage: 0.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 },
+                        grid: { color: '#e2e5e9', drawBorder: false }
+                    },
+                    x: {
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

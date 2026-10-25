@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Create Job — MindMap{% endblock %}
+{% block page_title %}Create Job{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Jobs
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<div class="content-card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-plus-circle me-2"></i>New Job</h5>
+    </div>
+    <div class="card-body-custom p-4">
+        <form method="POST" action="{{ url_for('jobs.create_job') }}" novalidate>
+
+            <!-- Job Name -->
+            <div class="mb-3">
+                <label for="name" class="form-label fw-semibold">Job Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name"
+                       value="{{ name|default('', true) }}" placeholder="e.g. Daily Data Backup" required>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label for="description" class="form-label fw-semibold">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="2"
+                          placeholder="Optional description">{{ description|default('', true) }}</textarea>
+            </div>
+
+            <!-- Script Path -->
+            <div class="mb-3">
+                <label for="script_path" class="form-label fw-semibold">Python Script Path <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="script_path" name="script_path"
+                       value="{{ script_path|default('', true) }}"
+                       placeholder="e.g. C:\Automation\Scripts\backup.py" required>
+                <div class="form-text">Full path to the .py file on this machine.</div>
+            </div>
+
+            <!-- Arguments -->
+            <div class="mb-3">
+                <label for="arguments" class="form-label fw-semibold">Script Arguments</label>
+                <input type="text" class="form-control" id="arguments" name="arguments"
+                       value="{{ arguments|default('', true) }}"
+                       placeholder="e.g. --environment production --date today">
+                <div class="form-text">Optional command-line arguments passed to the script.</div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Schedule Type -->
+            <div class="mb-3">
+                <label for="schedule_type" class="form-label fw-semibold">Schedule Type <span class="text-danger">*</span></label>
+                <select class="form-select" id="schedule_type" name="schedule_type" required>
+                    <option value="" disabled {{ 'selected' if not schedule_type|default('') }}>Choose a schedule…</option>
+                    <option value="one_time" {{ 'selected' if schedule_type|default('') == 'one_time' }}>One Time</option>
+                    <option value="daily" {{ 'selected' if schedule_type|default('') == 'daily' }}>Daily</option>
+                    <option value="weekly" {{ 'selected' if schedule_type|default('') == 'weekly' }}>Weekly</option>
+                    <option value="interval" {{ 'selected' if schedule_type|default('') == 'interval' }}>Interval</option>
+                </select>
+            </div>
+
+            <!-- Schedule Fields (shown/hidden by JS) -->
+            <div id="schedule-fields">
+
+                <!-- One Time: date + time -->
+                <div class="schedule-group" data-schedule="one_time" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="schedule_date" class="form-label fw-semibold">Date</label>
+                            <input type="date" class="form-control" id="schedule_date" name="schedule_date"
+                                   value="{{ (schedule_value|default({})).get('date', '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="schedule_time_once" class="form-label fw-semibold">Time</label>
+                            <input type="time" class="form-control" id="schedule_time_once" name="schedule_time"
+                                   value="{{ (schedule_value|default({})).get('time', '') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily: time -->
+                <div class="schedule-group" data-schedule="daily" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="schedule_time_daily" class="form-label fw-semibold">Time</label>
+                            <input type="time" class="form-control" id="schedule_time_daily" name="schedule_time"
+                                   value="{{ (schedule_value|default({})).get('time', '') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly: day + time -->
+                <div class="schedule-group" data-schedule="weekly" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="schedule_day" class="form-label fw-semibold">Day of Week</label>
+                            <select class="form-select" id="schedule_day" name="schedule_day">
+                                <option value="">Select day…</option>
+                                <option value="mon" {{ 'selected' if (schedule_value|default({})).get('day', '') == 'mon' }}>Monday</option>
+                                <option value="tue" {{ 'selected' if (schedule_value|default({})).get('day', '') == 'tue' }}>Tuesday</option>
+                                <option value="wed" {{ 'selected' if (schedule_value|default({})).get('day', '') == 'wed' }}>Wednesday</option>
+                                <option value="thu" {{ 'selected' if (schedule_value|default({})).get('day', '') == 'thu' }}>Thursday</option>
+                                <option value="fri" {{ 'selected' if (schedule_value|default({})).get('day', '') == 'fri' }}>Friday</option>
+                                <option value="sat" {{ 'selected' if (schedule_value|default({})).get('day', '') == 'sat' }}>Saturday</option>
+                                <option value="sun" {{ 'selected' if (schedule_value|default({})).get('day', '') == 'sun' }}>Sunday</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="schedule_time_weekly" class="form-label fw-semibold">Time</label>
+                            <input type="time" class="form-control" id="schedule_time_weekly" name="schedule_time"
+                                   value="{{ (schedule_value|default({})).get('time', '') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interval: hours + minutes -->
+                <div class="schedule-group" data-schedule="interval" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="interval_hours" class="form-label fw-semibold">Hours</label>
+                            <input type="number" class="form-control" id="interval_hours" name="interval_hours"
+                                   min="0" value="{{ (schedule_value|default({})).get('hours', '0') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="interval_minutes" class="form-label fw-semibold">Minutes</label>
+                            <input type="number" class="form-control" id="interval_minutes" name="interval_minutes"
+                                   min="0" max="59" value="{{ (schedule_value|default({})).get('minutes', '0') }}">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <hr class="my-4">
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>Create Job
+            </button>
+            <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    initScheduleFields();
+</script>
+{% endblock %}

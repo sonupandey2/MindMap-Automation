@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Executions — MindMap{% endblock %}
+{% block page_title %}Execution History{% endblock %}
+
+{% block content %}
+
+<!-- Filters -->
+<div class="content-card mb-4">
+    <div class="card-body-custom p-3">
+        <form method="GET" action="{{ url_for('executions.list_executions') }}" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label for="filter_job" class="form-label">Job</label>
+                <select class="form-select form-select-sm" id="filter_job" name="job_id">
+                    <option value="">All Jobs</option>
+                    {% for job in jobs %}
+                        <option value="{{ job.id }}" {{ 'selected' if filter_job_id == job.id }}>{{ job.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filter_status" class="form-label">Status</label>
+                <select class="form-select form-select-sm" id="filter_status" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="RUNNING" {{ 'selected' if filter_status == 'RUNNING' }}>Running</option>
+                    <option value="SUCCESS" {{ 'selected' if filter_status == 'SUCCESS' }}>Success</option>
+                    <option value="FAILED"  {{ 'selected' if filter_status == 'FAILED'  }}>Failed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+            </div>
+            {% if filter_job_id or filter_status %}
+            <div class="col-md-2">
+                <a href="{{ url_for('executions.list_executions') }}" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="bi bi-x-lg me-1"></i>Clear
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Executions Table -->
+<div class="content-card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-activity"></i> Executions</h5>
+        <span style="font-size:0.78rem;color:#8492a6;">
+            Showing <strong style="color:#3d4752;">{{ executions|length }}</strong>
+            of <strong style="color:#3d4752;">{{ total }}</strong> records
+        </span>
+    </div>
+    <div class="card-body-custom">
+        {% if executions %}
+        <table class="table table-custom">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Job Name</th>
+                    <th>Start Time</th>
+                    <th>Completed</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for execution, job_name in executions %}
+                <tr>
+                    <td class="cell-id">#{{ execution.id }}</td>
+                    <td style="font-weight:500;color:#3d4752;">{{ job_name }}</td>
+                    <td class="cell-date">
+                        {{ execution.started_at.strftime('%Y-%m-%d %H:%M:%S') if execution.started_at else '—' }}
+                    </td>
+                    <td class="cell-date">
+                        {{ execution.completed_at.strftime('%Y-%m-%d %H:%M:%S') if execution.completed_at else '—' }}
+                    </td>
+                    <td style="font-weight:600;color:#3d4752;font-size:0.85rem;">
+                        {% if execution.duration is not none %}
+                            {{ '%.1f'|format(execution.duration) }}s
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        <span class="badge-status badge-{{ execution.status|lower }}">{{ execution.status }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('executions.view_execution', execution_id=execution.id) }}"
+                           class="icon-btn icon-btn-view" title="View Details">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if total_pages > 1 %}
+        <div class="pagination-wrap">
+            <div class="pagination-info">
+                Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+                &nbsp;·&nbsp; {{ total }} total records
+            </div>
+            <div class="pagination-controls">
+                <a href="{{ url_for('executions.list_executions', page=1, job_id=filter_job_id or '', status=filter_status or '') }}"
+                   class="page-btn {% if page == 1 %}disabled{% endif %}"><i class="bi bi-chevron-double-left"></i></a>
+                <a href="{{ url_for('executions.list_executions', page=page-1, job_id=filter_job_id or '', status=filter_status or '') }}"
+                   class="page-btn {% if page == 1 %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+                {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+                    <a href="{{ url_for('executions.list_executions', page=p, job_id=filter_job_id or '', status=filter_status or '') }}"
+                       class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+                {% endfor %}
+                <a href="{{ url_for('executions.list_executions', page=page+1, job_id=filter_job_id or '', status=filter_status or '') }}"
+                   class="page-btn {% if page == total_pages %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+                <a href="{{ url_for('executions.list_executions', page=total_pages, job_id=filter_job_id or '', status=filter_status or '') }}"
+                   class="page-btn {% if page == total_pages %}disabled{% endif %}"><i class="bi bi-chevron-double-right"></i></a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox d-block"></i>
+            <p>No executions found matching your filters.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

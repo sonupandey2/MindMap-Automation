@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Job — {{ job.name }}{% endblock %}
+{% block page_title %}Edit Job{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('jobs.view_job', job_id=job.id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Job
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<div class="content-card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-pencil-square me-2"></i>Edit: {{ job.name }}</h5>
+    </div>
+    <div class="card-body-custom p-4">
+        <form method="POST" action="{{ url_for('jobs.edit_job', job_id=job.id) }}" novalidate>
+
+            <!-- Job Name -->
+            <div class="mb-3">
+                <label for="name" class="form-label fw-semibold">Job Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name"
+                       value="{{ name|default(job.name, true) }}" required>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label for="description" class="form-label fw-semibold">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="2">{{ description|default(job.description or '', true) }}</textarea>
+            </div>
+
+            <!-- Script Path -->
+            <div class="mb-3">
+                <label for="script_path" class="form-label fw-semibold">Python Script Path <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="script_path" name="script_path"
+                       value="{{ script_path|default(job.script_path, true) }}" required>
+                <div class="form-text">Full path to the .py file on this machine.</div>
+            </div>
+
+            <!-- Arguments -->
+            <div class="mb-3">
+                <label for="arguments" class="form-label fw-semibold">Script Arguments</label>
+                <input type="text" class="form-control" id="arguments" name="arguments"
+                       value="{{ arguments|default(job.arguments or '', true) }}">
+            </div>
+
+            <hr class="my-4">
+
+            {% set st = schedule_type|default(job.schedule_type, true) %}
+            {% set sv = schedule_value|default({}, true) %}
+
+            <!-- Schedule Type -->
+            <div class="mb-3">
+                <label for="schedule_type" class="form-label fw-semibold">Schedule Type <span class="text-danger">*</span></label>
+                <select class="form-select" id="schedule_type" name="schedule_type" required>
+                    <option value="" disabled>Choose a schedule…</option>
+                    <option value="one_time" {{ 'selected' if st == 'one_time' }}>One Time</option>
+                    <option value="daily" {{ 'selected' if st == 'daily' }}>Daily</option>
+                    <option value="weekly" {{ 'selected' if st == 'weekly' }}>Weekly</option>
+                    <option value="interval" {{ 'selected' if st == 'interval' }}>Interval</option>
+                </select>
+            </div>
+
+            <!-- Schedule Fields -->
+            <div id="schedule-fields">
+
+                <!-- One Time -->
+                <div class="schedule-group" data-schedule="one_time" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="schedule_date" class="form-label fw-semibold">Date</label>
+                            <input type="date" class="form-control" id="schedule_date" name="schedule_date"
+                                   value="{{ sv.get('date', '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="schedule_time_once" class="form-label fw-semibold">Time</label>
+                            <input type="time" class="form-control" id="schedule_time_once" name="schedule_time"
+                                   value="{{ sv.get('time', '') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily -->
+                <div class="schedule-group" data-schedule="daily" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="schedule_time_daily" class="form-label fw-semibold">Time</label>
+                            <input type="time" class="form-control" id="schedule_time_daily" name="schedule_time"
+                                   value="{{ sv.get('time', '') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly -->
+                <div class="schedule-group" data-schedule="weekly" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="schedule_day" class="form-label fw-semibold">Day of Week</label>
+                            <select class="form-select" id="schedule_day" name="schedule_day">
+                                <option value="">Select day…</option>
+                                <option value="mon" {{ 'selected' if sv.get('day', '') == 'mon' }}>Monday</option>
+                                <option value="tue" {{ 'selected' if sv.get('day', '') == 'tue' }}>Tuesday</option>
+                                <option value="wed" {{ 'selected' if sv.get('day', '') == 'wed' }}>Wednesday</option>
+                                <option value="thu" {{ 'selected' if sv.get('day', '') == 'thu' }}>Thursday</option>
+                                <option value="fri" {{ 'selected' if sv.get('day', '') == 'fri' }}>Friday</option>
+                                <option value="sat" {{ 'selected' if sv.get('day', '') == 'sat' }}>Saturday</option>
+                                <option value="sun" {{ 'selected' if sv.get('day', '') == 'sun' }}>Sunday</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="schedule_time_weekly" class="form-label fw-semibold">Time</label>
+                            <input type="time" class="form-control" id="schedule_time_weekly" name="schedule_time"
+                                   value="{{ sv.get('time', '') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interval -->
+                <div class="schedule-group" data-schedule="interval" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="interval_hours" class="form-label fw-semibold">Hours</label>
+                            <input type="number" class="form-control" id="interval_hours" name="interval_hours"
+                                   min="0" value="{{ sv.get('hours', '0') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="interval_minutes" class="form-label fw-semibold">Minutes</label>
+                            <input type="number" class="form-control" id="interval_minutes" name="interval_minutes"
+                                   min="0" max="59" value="{{ sv.get('minutes', '0') }}">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <hr class="my-4">
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>Save Changes
+            </button>
+            <a href="{{ url_for('jobs.view_job', job_id=job.id) }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    initScheduleFields();
+</script>
+{% endblock %}

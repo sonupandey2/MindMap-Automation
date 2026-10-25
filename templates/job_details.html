@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.name }} — MindMap{% endblock %}
+{% block page_title %}Job Details{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Jobs
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Job Info Card ──────────────────────────────────────── -->
+<div class="content-card mb-4">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-briefcase me-2"></i>{{ job.name }}</h5>
+        <div class="d-flex gap-2">
+            <form action="{{ url_for('jobs.run_now', job_id=job.id) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-play-fill me-1"></i>Run Now
+                </button>
+            </form>
+            <a href="{{ url_for('jobs.edit_job', job_id=job.id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-pencil me-1"></i>Edit
+            </a>
+            <form action="{{ url_for('jobs.delete_job', job_id=job.id) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm"
+                        data-confirm="Are you sure you want to delete '{{ job.name }}'?">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="card-body-custom p-4">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0" style="font-size: 0.9rem;">
+                    <tr>
+                        <td class="text-muted fw-semibold" style="width: 140px;">Description</td>
+                        <td>{{ job.description or '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Script Path</td>
+                        <td><code>{{ job.script_path }}</code></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Arguments</td>
+                        <td>{{ job.arguments or '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Schedule</td>
+                        <td>{{ job|format_schedule }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0" style="font-size: 0.9rem;">
+                    <tr>
+                        <td class="text-muted fw-semibold" style="width: 140px;">Status</td>
+                        <td>
+                            <span class="badge-status badge-{{ job.status|lower }}">
+                                {{ job.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Created At</td>
+                        <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if job.created_at else '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Last Run</td>
+                        <td>{{ job.last_run_at.strftime('%Y-%m-%d %H:%M:%S') if job.last_run_at else '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Next Run</td>
+                        <td>{{ job.next_run_at.strftime('%Y-%m-%d %H:%M:%S') if job.next_run_at else '—' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Recent Executions ─────────────────────────────────── -->
+<div class="content-card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-clock-history me-2"></i>Recent Executions</h5>
+    </div>
+    <div class="card-body-custom">
+        {% if recent_executions %}
+        <table class="table table-custom">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Started</th>
+                    <th>Completed</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ex in recent_executions %}
+                <tr>
+                    <td>#{{ ex.id }}</td>
+                    <td>{{ ex.started_at.strftime('%Y-%m-%d %H:%M:%S') if ex.started_at else '—' }}</td>
+                    <td>{{ ex.completed_at.strftime('%Y-%m-%d %H:%M:%S') if ex.completed_at else '—' }}</td>
+                    <td>{{ '%.1f'|format(ex.duration) ~ 's' if ex.duration is not none else '—' }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ ex.status|lower }}">{{ ex.status }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox d-block"></i>
+            <p>No executions yet for this job.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Jobs — MindMap{% endblock %}
+{% block page_title %}Automation Jobs{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('jobs.create_job') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>New Job
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<div class="content-card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-cpu"></i> All Jobs</h5>
+        <span style="font-size:0.78rem;color:#8492a6;">
+            Showing <strong style="color:#3d4752;">{{ jobs|length }}</strong>
+            of <strong style="color:#3d4752;">{{ total }}</strong> jobs
+        </span>
+    </div>
+    <div class="card-body-custom">
+        {% if jobs %}
+        <table class="table table-custom">
+            <thead>
+                <tr>
+                    <th>Job Name</th>
+                    <th>Python Script</th>
+                    <th>Schedule</th>
+                    <th>Status</th>
+                    <th>Last Run</th>
+                    <th>Next Run</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td class="cell-primary">
+                        <a href="{{ url_for('jobs.view_job', job_id=job.id) }}">{{ job.name }}</a>
+                    </td>
+                    <td class="cell-secondary" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        {{ job.script_path }}
+                    </td>
+                    <td class="cell-schedule">{{ job|format_schedule }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ job.status|lower }}">{{ job.status }}</span>
+                    </td>
+                    <td class="cell-date">
+                        {{ job.last_run_at.strftime('%Y-%m-%d %H:%M') if job.last_run_at else '—' }}
+                    </td>
+                    <td class="cell-date">
+                        {{ job.next_run_at.strftime('%Y-%m-%d %H:%M') if job.next_run_at else '—' }}
+                    </td>
+                    <td>
+                        <div class="action-group">
+                            <a href="{{ url_for('jobs.view_job', job_id=job.id) }}"
+                               class="icon-btn icon-btn-view" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('jobs.edit_job', job_id=job.id) }}"
+                               class="icon-btn icon-btn-edit" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form action="{{ url_for('jobs.run_now', job_id=job.id) }}" method="POST">
+                                <button type="submit" class="icon-btn icon-btn-run" title="Run Now">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
+                            </form>
+                            <form action="{{ url_for('jobs.delete_job', job_id=job.id) }}" method="POST">
+                                <button type="submit" class="icon-btn icon-btn-delete"
+                                        data-confirm="Delete '{{ job.name }}'?"
+                                        title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if total_pages > 1 %}
+        <div class="pagination-wrap">
+            <div class="pagination-info">
+                Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+                &nbsp;·&nbsp; {{ total }} total jobs
+            </div>
+            <div class="pagination-controls">
+                <a href="{{ url_for('jobs.list_jobs', page=1) }}"
+                   class="page-btn {% if page == 1 %}disabled{% endif %}" title="First">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+                <a href="{{ url_for('jobs.list_jobs', page=page-1) }}"
+                   class="page-btn {% if page == 1 %}disabled{% endif %}" title="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+                    <a href="{{ url_for('jobs.list_jobs', page=p) }}"
+                       class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+                {% endfor %}
+                <a href="{{ url_for('jobs.list_jobs', page=page+1) }}"
+                   class="page-btn {% if page == total_pages %}disabled{% endif %}" title="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                <a href="{{ url_for('jobs.list_jobs', page=total_pages) }}"
+                   class="page-btn {% if page == total_pages %}disabled{% endif %}" title="Last">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-cpu d-block"></i>
+            <p>No automation jobs yet.</p>
+            <a href="{{ url_for('jobs.create_job') }}" class="btn btn-primary btn-sm mt-3">
+                <i class="bi bi-plus-lg me-1"></i>Create Your First Job
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
